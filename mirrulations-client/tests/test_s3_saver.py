@@ -2,7 +2,7 @@ import os
 import boto3
 from moto import mock_s3
 from pytest import fixture
-from mirrcore.amazon_s3 import AmazonS3
+from mirrclient.s3_saver import S3Saver
 
 
 def create_mock_mirrulations_bucket():
@@ -18,33 +18,31 @@ def mock_env():
 
 
 def test_get_credentials():
-    assert AmazonS3().get_credentials() is True
+    assert S3Saver().get_credentials() is True
 
 
 @mock_s3
 def test_get_s3_client():
-    assert AmazonS3().get_s3_client()
+    assert S3Saver().get_s3_client()
 
 
 def test_get_s3_client_no_env_variables_present():
     del os.environ['AWS_ACCESS_KEY']
     del os.environ['AWS_SECRET_ACCESS_KEY']
-    assert AmazonS3().get_credentials() is False
+    assert S3Saver().get_credentials() is False
 
 
 @mock_s3
 def test_put_text_to_bucket():
     conn = create_mock_mirrulations_bucket()
-    s3_bucket = AmazonS3()
+    s3_bucket = S3Saver(bucket_name="test-mirrulations1")
     test_data = {
         "data": "test"
     }
-    test_path = "data/test"
-    response = s3_bucket.put_text_s3("test-mirrulations1",
-                                     test_path, test_data)
-    body = conn.Object("test-mirrulations1", "data/test").get()["Body"] \
-                                                         .read() \
-                                                         .decode("utf-8")
+    test_path = "data/test.json"
+    response = s3_bucket.save_json(test_path, test_data)
+    body = conn.Object("test-mirrulations1",
+                       "data/test.json").get()["Body"].read().decode("utf-8")
     assert body == '{"data": "test"}'
     assert response["ResponseMetadata"]['HTTPStatusCode'] == 200
 
@@ -52,12 +50,11 @@ def test_put_text_to_bucket():
 @mock_s3
 def test_put_binary_to_bucket():
     conn = create_mock_mirrulations_bucket()
-    s3_bucket = AmazonS3()
+    s3_bucket = S3Saver(bucket_name="test-mirrulations1")
     test_data = b'\x17'
-    test_path = "data/test"
-    response = s3_bucket.put_binary_s3("test-mirrulations1",
-                                       test_path, test_data)
+    test_path = "data/test.binary"
+    response = s3_bucket.save_binary(test_path, test_data)
     body = conn.Object("test-mirrulations1",
-                       "data/test").get()["Body"].read().decode("utf-8")
+                       "data/test.binary").get()["Body"].read().decode("utf-8")
     assert body == '\x17'
     assert response["ResponseMetadata"]['HTTPStatusCode'] == 200

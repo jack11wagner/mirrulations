@@ -1,8 +1,8 @@
 import os
 from json import dumps, load
-from mirrclient.saver import Saver
 
-class DiskSaver(Saver):
+
+class DiskSaver():
 
     def make_path(self, path):
         try:
@@ -24,6 +24,7 @@ class DiskSaver(Saver):
         data : dict
             the results data to be written to disk
         """
+        self.make_path(path)
         data = data['results']
         if os.path.exists(path) is False:
             self.save_to_disk(path, data)
@@ -40,9 +41,11 @@ class DiskSaver(Saver):
             self.check_for_duplicates(path, data, i + 1)
 
     def save_binary(self, path, data):
+        self.make_path(path)
         with open(path, "wb") as file:
             file.write(data)
             file.close()
+
     def open_json_file(self, path):
         with open(path, encoding='utf8') as file:
             saved_data = load(file)

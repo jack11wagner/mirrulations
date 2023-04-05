@@ -7,6 +7,8 @@ import requests_mock
 from mirrclient.client import NoJobsAvailableException, Client
 from mirrclient.client import is_environment_variables_present
 from requests.exceptions import Timeout, ReadTimeout
+from moto import mock_s3
+import boto3
 
 BASE_URL = 'http://work_server:8080'
 
@@ -17,6 +19,8 @@ def mock_env():
     os.environ['WORK_SERVER_PORT'] = '8080'
     os.environ['API_KEY'] = 'TESTING_KEY'
     os.environ['ID'] = '-1'
+    os.environ['AWS_ACCESS_KEY'] = 'test_key'
+    os.environ['AWS_SECRET_ACCESS_KEY'] = 'test_secret_key'
 
 
 @fixture(name='mock_requests')
@@ -84,6 +88,12 @@ def test_client_has_no_id():
     # Need to delete id env variable set by mock_env fixture
     del os.environ['ID']
     assert is_environment_variables_present() is False
+
+
+def create_mock_mirrulations_bucket():
+    conn = boto3.resource("s3", region_name="us-east-1")
+    conn.create_bucket(Bucket="mirrulations")
+    return conn
 
 
 def test_client_gets_job(mock_requests):
@@ -420,7 +430,9 @@ def test_handles_nonetype_error(mock_requests, path_generator):
         assert attachment_paths == []
 
 
+@mock_s3
 def test_success_client_logging(capsys, mock_requests):
+    create_mock_mirrulations_bucket()
     client = Client()
     client.api_key = 1234
 
