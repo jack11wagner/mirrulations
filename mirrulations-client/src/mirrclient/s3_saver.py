@@ -130,5 +130,5 @@ class S3Saver():
             Bucket=self.bucket_name,
             Key=path,
             Body=text)
-        print(f"Wrote extracted text to S3: {path}")
+        print(f"Wrote text to S3: {path}")
         return response
